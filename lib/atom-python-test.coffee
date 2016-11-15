@@ -9,6 +9,7 @@ module.exports = AtomPythonTest =
 
   subscriptions: null
 
+  # TODO: put order in the options (and potentially rename/rephrase some)
   config:
     executeDocTests:
       type: 'boolean'
@@ -27,6 +28,15 @@ module.exports = AtomPythonTest =
       type: 'boolean'
       default: true
       title: 'Color the ouput'
+    runCoverage:
+      type: 'boolean'
+      default: false
+      title: 'Ask for coverage report on test runs'
+    coveragePrefix:
+      type: 'string'
+      default: 'test_'
+      title: 'Prefix/Suffix of your UT script'
+
 
   activate: (state) ->
 
@@ -75,6 +85,13 @@ module.exports = AtomPythonTest =
 
     command = 'python'
     args = ['-m', 'pytest', filePath, '--junit-xml=' + @testResultsFilename.name]
+
+    # TODO: handle coverage config file
+    runCoverage = atom.config.get('atom-python-test.runCoverage')
+    if runCoverage
+        prefixSuffix = atom.config.get('atom-python-test.coveragePrefix')
+        scriptPath = filePath.replace prefixSuffix, ""
+        args.push ('--cov=' + scriptPath)
 
     if executeDocTests
       args.push '--doctest-modules'
