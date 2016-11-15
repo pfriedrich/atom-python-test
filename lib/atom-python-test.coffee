@@ -22,20 +22,24 @@ module.exports = AtomPythonTest =
     runVerbose:
       type: 'boolean'
       default: true
-      title: 'Run with verbose option'
+      title: 'Always run with verbose option'
     # TODO: use this option for the coloured output feature
     ouputColored:
       type: 'boolean'
       default: true
-      title: 'Color the ouput'
-    runCoverage:
-      type: 'boolean'
-      default: false
-      title: 'Ask for coverage report on test runs'
-    coveragePrefix:
-      type: 'string'
-      default: 'test_'
-      title: 'Prefix/Suffix of your UT script'
+      title: 'Color the ouput (WIP)'
+    coverage:
+      type: 'object'
+      properties:
+        run:
+          type: 'boolean'
+          default: false
+          title: 'Always ask for coverage report on test runs'
+        suffixPrefix:
+          type: 'string'
+          default: 'test_'
+          title: 'Prefix/Suffix of your UT script'
+
 
 
   activate: (state) ->
@@ -46,6 +50,7 @@ module.exports = AtomPythonTest =
     @subscriptions = new CompositeDisposable
 
     # Register command that toggles this view
+    # TODO: add a new option to run with coverage
     @subscriptions.add atom.commands.add 'atom-workspace', 'atom-python-test:run-all-tests': => @runAllTests()
     @subscriptions.add atom.commands.add 'atom-workspace', 'atom-python-test:run-all-tests-verbose': => @runAllTests(verbose=true)
     @subscriptions.add atom.commands.add 'atom-workspace', 'atom-python-test:run-test-under-cursor': => @runTestUnderCursor()
@@ -87,9 +92,12 @@ module.exports = AtomPythonTest =
     args = ['-m', 'pytest', filePath, '--junit-xml=' + @testResultsFilename.name]
 
     # TODO: handle coverage config file
-    runCoverage = atom.config.get('atom-python-test.runCoverage')
+    # FIXME: this creates a .coverage file in the package folder
+    runCoverage = atom.config.get('atom-python-test.coverage.run')
     if runCoverage
-        prefixSuffix = atom.config.get('atom-python-test.coveragePrefix')
+        prefixSuffix = atom.config.get('atom-python-test.coverage.suffixPrefix')
+        # TODO: see if we can handle the case where suffix/prefix is wrong
+        # TODO: rename scriptPath anf filePath to be more clear what they are
         scriptPath = filePath.replace prefixSuffix, ""
         args.push ('--cov=' + scriptPath)
 
