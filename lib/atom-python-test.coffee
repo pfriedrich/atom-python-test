@@ -23,11 +23,10 @@ module.exports = AtomPythonTest =
       type: 'boolean'
       default: true
       title: 'Always run with verbose option'
-    # TODO: use this option for the coloured output feature
-    ouputColored:
+    outputColored:
       type: 'boolean'
-      default: true
-      title: 'Color the ouput (WIP)'
+      default: false
+      title: 'Color the output'
     coverage:
       type: 'object'
       properties:
@@ -72,12 +71,15 @@ module.exports = AtomPythonTest =
 
     stdout = (output) ->
       atomPythonTestView = AtomPythonTest.atomPythonTestView
-      atomPythonTestView.addLine output
+      do_coloring = atom.config.get('atom-python-test.outputColored')
+      atomPythonTestView.addLine output, do_coloring
 
     exit = (code) ->
       atomPythonTestView = AtomPythonTest.atomPythonTestView
 
       junitViewer = require('junit-viewer')
+      # TODO: check with parse junitViewer.parseXML
+      # TODO: try to read it with a request for json
       parsedResults = junitViewer.parse(AtomPythonTest.testResultsFilename.name)
 
       if parsedResults.junit_info.tests.error > 0 and code != 0
