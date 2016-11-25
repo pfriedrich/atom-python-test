@@ -13,28 +13,35 @@ module.exports =
             @span class: 'icon icon-x'
           @button outlet: 'clearBtn', class: 'btn inline-block-tight right', click: 'clear', style: 'float: right', =>
             @span class: 'icon icon-trashcan'
-          @button outlet: 'clearBtn', class: 'btn inline-block-tight right', click: 'showHistory', style: 'float: right', =>
+          @button outlet: 'historyBtn', class: 'btn inline-block-tight right', click: 'showHistory', style: 'float: right', =>
             @span class: 'icon icon-history'
         @pre class: 'output', outlet: 'output'
 
     initialize: ->
       @panel ?= atom.workspace.addBottomPanel(item: this)
       @message = ""
-      @history = ""
+      @history = []
+      @compiled_history = ""
       @panel.hide()
     # TODO: create history field to store previous results
 
+    convertToTwoDigits: (number) ->
+      if number < 10
+        return '0' + number
+      else
+        return number
+
     createTimestamp: ->
       today = new Date
-      dd = today.getDate()
-      #The value returned by getMonth is an integer between 0 and 11, referring 0 to January, 1 to February, and so on.
-      mm = today.getMonth() + 1
+      dd = @convertToTwoDigits(today.getDate())
+      # The value returned by getMonth is an integer between 0 and 11,
+      # referring 0 to January, 1 to February, and so on.
+      mm = @convertToTwoDigits(today.getMonth() + 1)
       yyyy = today.getFullYear()
-      if dd < 10
-        dd = '0' + dd
-      if mm < 10
-        mm = '0' + mm
-      today = mm + '-' + dd + '-' + yyyy
+      hh = @convertToTwoDigits(today.getHours())
+      mm2 = @convertToTwoDigits(today.getMinutes())
+      ss = @convertToTwoDigits(today.getSeconds())
+      today = mm + '-' + dd + '-' + yyyy + " " + hh + ":" + mm2 + ":" + ss
       return today
 
     addSpanTag: (line, class_to_add = "") ->
@@ -55,7 +62,7 @@ module.exports =
         new_line = line
       return new_line
 
-    # add yellow if "no tests"
+    # TODO: add yellow if "no tests"
     colorLine: (line) ->
       if line.indexOf("failed") > -1 or line.indexOf("E") == 0
         new_line = @addSpanTag(line, "failure-line")
@@ -64,6 +71,38 @@ module.exports =
       else
         new_line = line
       return new_line
+
+    addToHistory: (lines) ->
+      @history.push(lines)
+
+    # TODO: refactor if possible
+    # TODO: add coloring to the summary based on results
+    compileHistory: ->
+      date_pattern = ///^\d\d-\d\d-\d\d\d\d.*///i
+      for line, idx in @history
+        if idx == 0
+          @compiled_history += "<details>"
+          @compiled_history += "<summary>"
+          @compiled_history += line
+          @compiled_history += "</summary>"
+        if line.match(date_pattern) and idx > 0
+          @compiled_history += "</details>"
+          @compiled_history += "<details>"
+          @compiled_history += "<summary>"
+          @compiled_history += line
+          @compiled_history += "</summary>"
+        else
+         @compiled_history += line
+      @compiled_history += "</details>"
+      @history = []
+
+    showHistory: ->
+      if @history.length > 0
+        @compileHistory()
+      @clear()
+      @find(".output").append(@compiled_history)
+
+
 
     # TODO: add empty line after collected... and before FAILURES/x passed in
     addLine: (lines, do_coloring=false) ->
@@ -78,6 +117,7 @@ module.exports =
           else if line.indexOf("FAILED") > -1 or line.indexOf("PASSED") > -1
             @message = @colorStatus(line)
 
+        @addToHistory(@message + "\n")
         @find(".output").append(@message + "\n")
 
     clear: ->
@@ -97,5 +137,5 @@ module.exports =
     toggle: ->
       @find(".output").height(300)
       @addLine @createTimestamp()
-      @addLine '\nRunning tests... \n \n'
+      @addLine "Running tests... "
       @panel.show()
