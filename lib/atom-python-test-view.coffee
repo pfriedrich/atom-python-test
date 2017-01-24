@@ -20,10 +20,9 @@ module.exports =
     initialize: ->
       @panel ?= atom.workspace.addBottomPanel(item: this)
       @message = ""
-      @history = []
       @compiled_history = ""
+      @history = []
       @panel.hide()
-    # TODO: create history field to store previous results
 
     convertToTwoDigits: (number) ->
       if number < 10
@@ -44,36 +43,12 @@ module.exports =
       today = mm + '-' + dd + '-' + yyyy + " " + hh + ":" + mm2 + ":" + ss
       return today
 
-    addSpanTag: (line, class_to_add = "") ->
-      if class_to_add == ""
-        new_line = "<span>" + line + "</span>"
-      else
-        new_line = "<span class='" + class_to_add + "'>" + line + "</span>"
-      return new_line
-
-    colorStatus: (line) ->
-      parts = line.split(" ")
-      new_line = parts[0] + " "
-      if parts[1] == "FAILED"
-        new_line += @addSpanTag(parts[1], "failure-line")
-      else if parts[1] == "PASSED"
-        new_line += @addSpanTag(parts[1], "success-line")
-      else
-        new_line = line
-      return new_line
-
-    # TODO: add yellow if "no tests"
-    colorLine: (line) ->
-      if line.indexOf("failed") > -1 or line.indexOf("E") == 0
-        new_line = @addSpanTag(line, "failure-line")
-      else if line.indexOf("passed") > -1
-        new_line = @addSpanTag(line, "success-line")
-      else
-        new_line = line
-      return new_line
-
     addToHistory: (lines) ->
+      # if @history.length < 100000
       @history.push(lines)
+      # else
+      #   @history.pop()
+      #   @history.unshift(lines)
 
     # TODO: refactor if possible
     # TODO: add coloring to the summary based on results
@@ -82,27 +57,55 @@ module.exports =
       for line, idx in @history
         if idx == 0
           @compiled_history += "<details>"
-          @compiled_history += "<summary>"
-          @compiled_history += line
-          @compiled_history += "</summary>"
-        if line.match(date_pattern) and idx > 0
+          @compiled_history += "<summary>#{line}</summary>"
+        else if line.match(date_pattern)
           @compiled_history += "</details>"
           @compiled_history += "<details>"
-          @compiled_history += "<summary>"
-          @compiled_history += line
-          @compiled_history += "</summary>"
+          @compiled_history += "<summary>#{line}</summary>"
         else
-         @compiled_history += line
+         @compiled_history += "<div class='history-line'>#{line}</div>"
       @compiled_history += "</details>"
       @history = []
 
     showHistory: ->
+      @clear()
       if @history.length > 0
         @compileHistory()
-      @clear()
       @find(".output").append(@compiled_history)
 
+    addSpanTag: (text, class_to_add = "") ->
+      new_text = "<span class=#{class_to_add}>#{text}</span>"
+      return new_text
 
+    colorStatus: (parts, class_to_add) ->
+      colored_status = @addSpanTag(parts[1], class_to_add)
+      new_line = parts[0] + " " + colored_status
+
+      return new_line
+
+    # TODO: add yellow if "no tests"
+    colorLine: (line) ->
+      new_line = line
+
+      if line.indexOf("====") > -1
+        if line.indexOf("failed") > -1
+          new_line = @addSpanTag(line, class_to_add="failure-line")
+
+        else if line.indexOf("passed") > -1
+          new_line = @addSpanTag(line, class_to_add="success-line")
+
+      else if line.indexOf("E") == 0
+        new_line = @addSpanTag(line, class_to_add="failure-line")
+
+      else
+        parts = line.split(" ")
+        if parts[1] == "FAILED"
+          new_line = @colorStatus(parts, class_to_add="failure-line")
+
+        else if parts[1] == "PASSED"
+          new_line = @colorStatus(parts, class_to_add="success-line")
+
+      return new_line
 
     # TODO: add empty line after collected... and before FAILURES/x passed in
     addLine: (lines, do_coloring=false) ->
@@ -110,12 +113,10 @@ module.exports =
         if line == ""
           continue
 
-        @message = line
         if do_coloring
-          if line.indexOf("====") > -1 or line.indexOf("E") == 0
-            @message = @colorLine(line)
-          else if line.indexOf("FAILED") > -1 or line.indexOf("PASSED") > -1
-            @message = @colorStatus(line)
+          @message = @colorLine(line)
+        else
+          @message = line
 
         @addToHistory(@message + "\n")
         @find(".output").append(@message + "\n")
