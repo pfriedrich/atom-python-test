@@ -19,10 +19,6 @@ module.exports = AtomPythonTest =
       type: 'string'
       default: ''
       title: 'Additional arguments for pytest command line'
-    runVerbose:
-      type: 'boolean'
-      default: true
-      title: 'Always run with verbose option'
     outputColored:
       type: 'boolean'
       default: false
@@ -78,8 +74,6 @@ module.exports = AtomPythonTest =
       atomPythonTestView = AtomPythonTest.atomPythonTestView
 
       junitViewer = require('junit-viewer')
-      # TODO: check with parse junitViewer.parseXML
-      # TODO: try to read it with a request for json
       parsedResults = junitViewer.parse(AtomPythonTest.testResultsFilename.name)
 
       if parsedResults.junit_info.tests.error > 0 and code != 0
@@ -106,8 +100,7 @@ module.exports = AtomPythonTest =
     if executeDocTests
       args.push '--doctest-modules'
 
-    runVerbose = atom.config.get('atom-python-test.runVerbose')
-    if runVerbose or verbose
+    if verbose
       args.push '--verbose'
 
     additionalArgs = atom.config.get('atom-python-test.additionalArgs')
