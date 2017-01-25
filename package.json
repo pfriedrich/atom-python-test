@@ -18,6 +18,7 @@
   "dependencies": {
     "atom-space-pen-views": "latest",
     "tmp": "*",
-    "junit-viewer": "*"
+    "junit-viewer": "*",
+    "fs-plus": "*"
   }
 }

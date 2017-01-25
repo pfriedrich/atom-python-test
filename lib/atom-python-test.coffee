@@ -1,6 +1,8 @@
 AtomPythonTestView = require './atom-python-test-view'
 {CompositeDisposable} = require 'atom'
 
+fs = require 'fs-plus'
+
 module.exports = AtomPythonTest =
 
   atomPythonTestView: null
@@ -91,11 +93,35 @@ module.exports = AtomPythonTest =
     # FIXME: this creates a .coverage file in the package folder
     runCoverage = atom.config.get('atom-python-test.coverage.run')
     if runCoverage
-        prefixSuffix = atom.config.get('atom-python-test.coverage.suffixPrefix')
+
         # TODO: see if we can handle the case where suffix/prefix is wrong
-        # TODO: rename scriptPath anf filePath to be more clear what they are
-        scriptPath = filePath.replace prefixSuffix, ""
-        args.push ('--cov=' + scriptPath)
+        # TODO: make it so that suffixPrefix can be a list
+        suffixPrefix = atom.config.get('atom-python-test.coverage.suffixPrefix')
+
+        testPathParts = filePath.split "/"
+        testName = testPathParts[testPathParts.length - 1]
+        mutName = testName.replace suffixPrefix, ""
+
+        # TODO: see if we can avoid looping if test in same dir than mut 
+
+        console.log(mutName)
+
+        # TODO: make this better
+        projectPath = atom.project.getPaths()[0]
+        # console.log(projectPath)
+
+        files = fs.listTreeSync(projectPath)
+        # console.log(files)
+
+        for f in files
+            # TODO: make better regex
+            if f.indexOf(mutName) > -1 and f.indexOf("pyc") == -1
+                mutPath = f
+                console.log(mutPath)
+                break
+
+        args.push ('--cov=' + mutPath)
+
 
     if executeDocTests
       args.push '--doctest-modules'
