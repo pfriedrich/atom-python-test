@@ -35,6 +35,11 @@ module.exports = AtomPythonTest =
     @subscriptions.add atom.commands.add 'atom-workspace', 'atom-python-test:run-all-tests-verbose': => @runAllTests(verbose=true)
     @subscriptions.add atom.commands.add 'atom-workspace', 'atom-python-test:run-test-under-cursor': => @runTestUnderCursor()
 
+    # NOTE: this only works if page active when opening atom AND will not filter only pytest script
+    editor = atom.workspace.getActiveTextEditor()
+    if editor
+        @subscriptions.add editor.onDidSave => @runAllTests()
+
   deactivate: ->
     @subscriptions.dispose()
     @atomPythonTestView.destroy()
